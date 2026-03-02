@@ -1,43 +1,37 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  app:
+
+  jms-app:
     build: .
-    container_name: jpsms-backend
+    container_name: jms-app
     restart: always
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - JWT_SECRET=${JWT_SECRET}
     depends_on:
-      - db
-    networks:
-      - jpsms-network
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: jms
+      NODE_ENV: production
+    volumes:
+      - appdata:/app/uploads
 
-  db:
+  postgres:
     image: postgres:15-alpine
-    container_name: jpsms-postgres
+    container_name: jms-db
     restart: always
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: jms
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    networks:
-      - jpsms-network
 
 volumes:
   pgdata:
-
-networks:
-  jpsms-network:
-    driver: bridge
+  appdata:
