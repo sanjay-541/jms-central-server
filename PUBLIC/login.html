@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JMS - Login</title>
+    <!-- PWA Meta -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1e293b">
+    <link rel="stylesheet" href="/assets/app.css?v=5">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #f1f5f9;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-card">
+        <div class="login-title">JMS Admin</div>
+
+        <div class="form-group">
+            <label class="form-label">Username</label>
+            <input id="u_name" class="form-control" placeholder="Enter username"
+                onkeydown="if(event.key==='Enter') document.getElementById('u_pass').focus()">
+        </div>
+
+        <div class="form-group" style="position:relative">
+            <label class="form-label">Password</label>
+            <input id="u_pass" type="password" class="form-control" placeholder="Enter password"
+                style="padding-right:35px" onkeydown="if(event.key==='Enter') login()">
+            <i class="bi bi-eye-slash" id="togglePassIcon" onclick="togglePassword()"
+                style="position:absolute; right:10px; top:32px; cursor:pointer; color:#64748b; font-size:1.2rem; z-index:10"></i>
+        </div>
+
+        <div style="display:flex; align-items:center; margin-top:10px; margin-bottom:5px; gap:8px">
+            <input type="checkbox" id="rememberMe" style="width:16px; height:16px; cursor:pointer">
+            <label for="rememberMe" style="cursor:pointer; font-size:0.9rem; color:#475569; user-select:none">Remember
+                Me</label>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%; margin-top:10px" onclick="login()">Sign In</button>
+        <div id="login-error" class="text-danger" style="text-align:center; margin-top:15px; font-size:0.9rem"></div>
+    </div>
+
+    <!-- Factory Selector Modal -->
+    <div id="factory-modal"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(2px)">
+        <div
+            style="background:white; padding:25px; border-radius:12px; max-width:400px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out">
+            <h3 style="margin-top:0; margin-bottom:5px; color:#1e293b; text-align:center; font-weight:700">Select
+                Factory</h3>
+            <p style="text-align:center; color:#64748b; font-size:0.9rem; margin-bottom:20px">Please choose a location
+                to continue</p>
+
+            <div id="factory-list"
+                style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:2px">
+                <!-- Items injected here -->
+            </div>
+
+            <button onclick="logoutInModal()" class="btn btn-outline"
+                style="width:100%; margin-top:20px; border:1px solid #cbd5e1; color:#64748b; background:white; padding:10px; border-radius:8px">Cancel</button>
+        </div>
+    </div>
+
+    <style>
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .factory-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .factory-btn:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+    </style>
+
+    <!-- Factory Selector Modal -->
+    <div id="factory-modal"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(2px)">
+        <div
+            style="background:white; padding:25px; border-radius:12px; max-width:400px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out">
+            <h3 style="margin-top:0; margin-bottom:5px; color:#1e293b; text-align:center; font-weight:700">Select
+                Factory</h3>
+            <p style="text-align:center; color:#64748b; font-size:0.9rem; margin-bottom:20px">Please choose a location
+                to continue</p>
+
+            <div id="factory-list"
+                style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:2px">
+                <!-- Items injected here -->
+            </div>
+
+            <button onclick="logoutInModal()" class="btn btn-outline"
+                style="width:100%; margin-top:20px; border:1px solid #cbd5e1; color:#64748b">Cancel</button>
+        </div>
+    </div>
+
+    <style>
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+    <script src="/assets/app.js"></script>
+    <script>
+        let pendingUser = null;
+        let pendingFactories = [];
+
+        async function login() {
+            const u = document.getElementById('u_name').value;
+            const p = document.getElementById('u_pass').value;
+            const remember = document.getElementById('rememberMe').checked;
+
+            if (!u || !p) return showErr('Please enter credentials');
+
+            const btn = document.querySelector('.btn-primary');
+            btn.disabled = true;
+            btn.textContent = 'Authenticating...';
+
+            try {
+                // Modified app.js returns { user, factories } or just data depending on update
+                // My update returned { user: res.data, factories: res.factories }
+                const result = await JMS.auth.login(u, p);
+
+                // Check format
+                const user = result.user || result; // Fallback
+                const factories = result.factories || [];
+
+                pendingUser = user;
+
+                // Handle Remember Me
+                if (remember) {
+                    localStorage.setItem('jpsms_remember_user', u);
+                } else {
+                    localStorage.removeItem('jpsms_remember_user');
+                }
+
+                // Logic: 
+                // 1. If > 1 Factory -> Ask (Any Role)
+                // 2. If 1 Factory -> Auto Select
+                // 3. If 0 Factory -> Global/Error
+
+                // Superadmin always has all factories, so usually factories.length > 1
+                if (factories.length > 1) {
+                    showFactoryModal(factories);
+                } else if (factories.length === 1) {
+                    completeLogin(factories[0].id, factories[0].name);
+                } else {
+                    // Global Mode (e.g. for pure SaaS users with no factory specific data yet?)
+                    completeLogin(null, null);
+                }
+
+            } catch (e) {
+                showErr(e.message || 'Login failed');
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        }
+
+        function showFactoryModal(factories) {
+            const modal = document.getElementById('factory-modal');
+            const list = document.getElementById('factory-list');
+            list.innerHTML = '';
+
+            factories.forEach(f => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-outline';
+                btn.style.textAlign = 'left';
+                btn.style.border = '1px solid #e2e8f0';
+                btn.style.padding = '12px';
+                btn.style.display = 'flex';
+                btn.style.justifyContent = 'space-between';
+                btn.style.alignItems = 'center';
+
+                btn.innerHTML = `
+                    <div>
+                        <div style="font-weight:600; color:#334155">${f.name}</div>
+                        <div style="font-size:0.8rem; color:#64748b">${f.code} - ${f.location || ''}</div>
+                    </div>
+                    <i class="bi bi-chevron-right"></i>
+                `;
+                btn.onclick = () => completeLogin(f.id, f.name);
+                list.appendChild(btn);
+            });
+
+            modal.style.display = 'flex';
+        }
+
+        function completeLogin(factoryId, factoryName) {
+            localStorage.setItem('jpsms_factory_id', factoryId);
+            localStorage.setItem('jpsms_factory_name', factoryName);
+
+            // Redirect based on role
+            const u = pendingUser || JMS.auth.getUser();
+            const role = (u.role_code || u.role || '').toLowerCase();
+
+            if (role === 'supervisor') window.location.href = 'supervisor.html';
+            else if (role === 'qc_supervisor') window.location.href = 'QCSupervisor.html';
+            else if (role === 'quality') window.location.href = 'Quality.html';
+            else if (role === 'planning' || role === 'planner') window.location.href = 'planning.html';
+            else window.location.href = 'index.html';
+        }
+
+        function logoutInModal() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            document.getElementById('factory-modal').style.display = 'none';
+            document.querySelector('.btn').disabled = false;
+            document.querySelector('.btn').textContent = 'Sign In';
+        }
+
+        function showErr(msg) {
+            document.getElementById('login-error').textContent = msg;
+        }
+
+        // Auto-redirect if already logged in
+        const storedUserTop = localStorage.getItem('user') || localStorage.getItem('jpsms_user');
+        if (storedUserTop) {
+            try {
+                const u = JSON.parse(storedUserTop);
+                if (u && u.username) {
+                    const role = (u.role_code || u.role || '').toLowerCase();
+                    if (role === 'supervisor') window.location.href = 'supervisor.html';
+                    else if (role === 'qc_supervisor') window.location.href = 'QCSupervisor.html';
+                    else if (role === 'quality') window.location.href = 'Quality.html';
+                    else window.location.href = 'index.html';
+                }
+            } catch (e) {
+                console.error('Auto-login parse error', e);
+                localStorage.removeItem('user');
+                localStorage.removeItem('jpsms_user');
+            }
+        }
+
+        function togglePassword() {
+            const inp = document.getElementById('u_pass');
+            const icon = document.getElementById('togglePassIcon');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            } else {
+                inp.type = 'password';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            }
+        }
+
+        // Init Remember Me
+        const savedUser = localStorage.getItem('jpsms_remember_user');
+        if (savedUser) {
+            document.getElementById('u_name').value = savedUser;
+            document.getElementById('rememberMe').checked = true;
+        }
+
+        // Auto-redirect if already logged in (Token Logic check would be better but keeping legacy check)
+        const storedUser = localStorage.getItem('user') || localStorage.getItem('jpsms_user');
+        if (storedUser) {
+            // ... existing redirection logic check ...
+            // We'll re-read to be safe as we are just appending code, not replacing entire logic usually
+            try {
+                const u = JSON.parse(storedUser);
+                if (u && u.username) {
+                    const role = (u.role_code || u.role || '').toLowerCase();
+                    if (role === 'supervisor') window.location.href = 'Supervisor.html';
+                    else if (role === 'qc_supervisor') window.location.href = 'QCSupervisor.html';
+                    else if (role === 'quality') window.location.href = 'Quality.html';
+                    else window.location.href = 'index.html';
+                }
+            } catch (e) {
+                console.error('Auto-login parse error', e);
+                localStorage.removeItem('user');
+                localStorage.removeItem('jpsms_user');
+            }
+        }
+    </script>
+</body>
+
+</html>

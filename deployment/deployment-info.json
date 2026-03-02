@@ -1,0 +1,8 @@
+{
+    "project": "JMS",
+    "deploymentReady": true,
+    "dockerReady": false,
+    "multiFactoryReady": false,
+    "versionControl": "git",
+    "createdDate": ""
+}

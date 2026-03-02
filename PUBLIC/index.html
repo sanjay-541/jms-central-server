@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JMS - Dashboard</title>
+    <!-- PWA Meta -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1e293b">
+    <link rel="stylesheet" href="/assets/app.css?v=5">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .kpi-val {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+
+        .kpi-lbl {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-content">
+        <div class="header">
+            <div class="page-title">Dashboard</div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-lbl">Production Today</div>
+                <div class="kpi-val" id="kpi-prod">0</div>
+                <div class="text-muted">Pcs</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-lbl">Active Machines</div>
+                <div class="kpi-val" id="kpi-active">0</div>
+                <div class="text-muted">Running</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-lbl">Pending Orders</div>
+                <div class="kpi-val" id="kpi-orders">0</div>
+                <div class="text-muted">Backlog</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-lbl">DPR Entries</div>
+                <div class="kpi-val" id="kpi-dpr">0</div>
+                <div class="text-muted">Last 24h</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="header">
+                <div class="page-title" style="font-size:1.2rem">Quick Actions</div>
+            </div>
+            <div style="display:flex; gap:15px">
+                <a href="masters.html" class="btn btn-primary">Upload Orders</a>
+                <a href="planning.html" class="btn btn-outline">Go to Planning Board</a>
+                <a href="Quality.html" class="btn btn-outline">Quality</a>
+                <a href="users.html" class="btn btn-outline">Manage Users</a>
+                <a href="shifting_supervisor.html" class="btn btn-outline">Shifting Supervisor</a>
+                <a href="wip_supervisor.html" class="btn btn-outline">WIP Supervisor</a>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/assets/app.js?v=5"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            JMS.auth.requireAuth();
+            JMS.renderShell('dashboard');
+
+            const params = new URLSearchParams(window.location.search);
+            const view = params.get('view');
+            const title = document.getElementById('dashTitle');
+
+            if (view) {
+                // Capitalize first letter
+                const label = view.charAt(0).toUpperCase() + view.slice(1);
+                if (title) title.textContent = `${label} Dashboard`;
+                // Logic to filter KPIs would go here
+                JMS.toast(`Filtering for ${label}...`);
+            }
+
+            loadKPIs(view); // Pass view to loadKPIs
+        });
+
+        async function loadKPIs(view) {
+            try {
+                // In a real app, we'd pass ?view=${view} to the API
+                const res = await JMS.api.get('/dashboard/kpis');
+                const data = res.data;
+
+                // Mock filtering if API doesn't support it yet
+                if (view === 'moulding') {
+                    // Example: Only show relevant KPIs
+                }
+
+                document.getElementById('kpi-oee').textContent = data.oee + '%';
+                document.getElementById('kpi-util').textContent = data.utilization + '%';
+                document.getElementById('kpi-prod').textContent = data.production;
+                document.getElementById('kpi-reject').textContent = data.rejects + '%';
+            } catch (e) {
+                // console.error(e);
+            }
+        }
+
+    </script>
+    <script src="assets/ai-chat.js"></script>
+</body>
+
+</html>

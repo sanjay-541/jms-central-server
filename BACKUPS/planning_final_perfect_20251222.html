@@ -1,0 +1,1924 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JPSMS – Planning</title>
+
+  <!-- Icons + App CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/assets/app.css">
+
+  <!-- Early boot: theme + auth -->
+  <script>
+    (function bootThemeAndAuth() {
+      try {
+        var theme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        var t = localStorage.getItem('token');
+        if (!t) location.replace('/login.html'); // Ensure login
+      } catch (e) { }
+    })();
+  </script>
+
+  <style>
+    /* ======= Planning page — industry polish ======= */
+    :root {
+      --ok: #22c55e;
+      --warn: #facc15;
+      --bad: #ef4444;
+      --info: #60a5fa;
+      --ink-soft: #cbd5e1;
+      --border: rgba(148, 163, 184, .28);
+      --panel: linear-gradient(180deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .02));
+      --ring: var(--ring, rgba(96, 165, 250, .35));
+    }
+
+    .row-flex {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    .muted {
+      color: #94a3b8
+    }
+
+    .kpi-deck {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 8px
+    }
+
+    @media (max-width:1100px) {
+      .kpi-deck {
+        grid-template-columns: repeat(2, 1fr)
+      }
+    }
+
+    @media (max-width:640px) {
+      .kpi-deck {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .kpi-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--card);
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      box-shadow: 0 10px 28px rgba(2, 6, 23, .22);
+    }
+
+    .kpi-card .ico {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: rgba(148, 163, 184, .1);
+      border: 1px solid rgba(148, 163, 184, .25)
+    }
+
+    .kpi-card .ico i {
+      font-size: 18px
+    }
+
+    .kpi-card .txt .t {
+      font-size: 12px;
+      letter-spacing: .3px;
+      color: #94a3b8;
+      text-transform: uppercase
+    }
+
+    .kpi-card .txt .v {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: .2px
+    }
+
+    .kpi-card .right {
+      text-align: right
+    }
+
+    .kpi-card .delta {
+      font-size: 12px
+    }
+
+    .kpi-card .delta.up {
+      color: #86efac
+    }
+
+    .kpi-card .delta.down {
+      color: #fecaca
+    }
+
+    .spark {
+      height: 24px;
+      width: 120px;
+      display: block;
+      opacity: .9
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 8px 0
+    }
+
+    .legend {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .legend .chip {
+      border: 1px solid var(--border);
+      background: rgba(148, 163, 184, .08)
+    }
+
+    .legend .r {
+      border-color: #7f1d1d;
+      color: #fecaca
+    }
+
+    .legend .g {
+      border-color: #0c6b3a;
+      color: #86efac
+    }
+
+    .legend .y {
+      border-color: #a16207;
+      color: #fde68a
+    }
+
+    .legend .b {
+      border-color: #075985;
+      color: #93c5fd
+    }
+
+    .line-row {
+      margin-bottom: 16px
+    }
+
+    .line-title {
+      font-size: 12px;
+      color: #94a3b8;
+      margin: 8px 0 6px 2px;
+      letter-spacing: .2px
+    }
+
+    .machine-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px
+    }
+
+    .machine {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 260px;
+      max-width: 360px;
+      flex: 1 1 300px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      cursor: pointer;
+      transition: transform .12s, box-shadow .12s, border-color .12s, background .12s;
+    }
+
+    .machine:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .25);
+      border-color: #3b82f6
+    }
+
+    .machine.disabled {
+      opacity: .55;
+      cursor: not-allowed
+    }
+
+    .machine .icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(148, 163, 184, .35);
+      background: #fff;
+      flex: 0 0 auto;
+    }
+
+    .machine .icon i {
+      font-size: 18px
+    }
+
+    .machine .meta {
+      display: flex;
+      flex-direction: column
+    }
+
+    .machine .name {
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .machine .sub {
+      font-size: 12px;
+      color: #9ca3af
+    }
+
+    .machine .tag {
+      padding: .1rem .45rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, .35);
+      font-weight: 700
+    }
+
+    .queue-preview {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #93c5fd
+    }
+
+    .s-running {
+      border-color: #15803d80;
+      background: linear-gradient(180deg, #052e1a 0, #081f13 100%)
+    }
+
+    .s-running .icon {
+      background: #07321e;
+      border-color: #0c6b3a
+    }
+
+    .s-running .tag {
+      border-color: #10b981;
+      color: #86efac
+    }
+
+    .s-stopped {
+      border-color: #7f1d1d80;
+      background: linear-gradient(180deg, #2a0d0d 0, #1a0a0a 100%)
+    }
+
+    .s-stopped .icon {
+      background: #341212;
+      border-color: #7f1d1d
+    }
+
+    .s-stopped .tag {
+      border-color: var(--bad);
+      color: #fecaca
+    }
+
+    .s-maint {
+      border-color: #a1620780;
+      background: linear-gradient(180deg, #2b2305 0, #1e1a07 100%)
+    }
+
+    .s-maint .icon {
+      background: #3a310c;
+      border-color: #a16207
+    }
+
+    .s-maint .tag {
+      border-color: var(--warn);
+      color: #fde68a
+    }
+
+    .s-unplanned {
+      border-color: #07598580;
+      background: linear-gradient(180deg, #0a1f33 0, #0a1726 100%)
+    }
+
+    .s-unplanned .icon {
+      background: #0f2740;
+      border-color: #075985
+    }
+
+    .s-unplanned .tag {
+      border-color: var(--info);
+      color: #93c5fd
+    }
+
+    .chip.select.active {
+      outline: 2px solid var(--info);
+      background: rgba(96, 165, 250, .15)
+    }
+
+    .map-wrap {
+      display: none;
+      margin-top: 10px
+    }
+
+    .map-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px
+    }
+
+    .map-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    .hover-card {
+      position: fixed;
+      z-index: 1000;
+      width: 340px;
+      max-width: 92vw;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      box-shadow: 0 18px 36px rgba(2, 6, 23, .45);
+      display: none
+    }
+
+    .hover-card .hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px
+    }
+
+    .hover-card .t {
+      font-weight: 900;
+      letter-spacing: .25px
+    }
+
+    .hover-card .x {
+      background: transparent;
+      border: 0;
+      color: inherit;
+      opacity: .7;
+      cursor: pointer
+    }
+
+    .hover-card .x:hover {
+      opacity: 1
+    }
+
+    .hover-card .r {
+      font-size: 13px;
+      color: #9ca3af;
+      margin: 2px 0
+    }
+
+    .hover-card .bar {
+      margin: 10px 0;
+      border-top: 1px dashed var(--border)
+    }
+
+    .hover-card .actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end
+    }
+
+    /* Center modal: Create Plan Launcher & Preview modals */
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(17, 24, 39, .55);
+      z-index: 1200
+    }
+
+    .modal.show {
+      display: flex
+    }
+
+    .modal-card {
+      width: min(820px, 95vw);
+      max-height: 90vh;
+      overflow: auto;
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+      border: 1px solid var(--border)
+    }
+
+    .modal-head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .modal-body {
+      padding: 12px 14px
+    }
+
+    .modal-actions {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      position: sticky;
+      bottom: 0;
+      background: var(--card)
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px
+    }
+
+    .tab {
+      padding: 8px 12px;
+      border-radius: 10px 10px 0 0;
+      cursor: pointer
+    }
+
+    .tab.active {
+      background: rgba(148, 163, 184, .1);
+      border: 1px solid var(--border);
+      border-bottom-color: transparent
+    }
+
+    /* Side sheet (legacy plan editor) */
+    .sheet {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      top: 16px;
+      z-index: 1100;
+      width: 480px;
+      max-width: 95vw;
+      display: none
+    }
+
+    .sheet .sheet-card {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 12px 32px rgba(2, 6, 23, .4)
+    }
+
+    .sheet .sheet-head {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .sheet .sheet-body {
+      padding: 10px;
+      overflow: auto
+    }
+
+    .sheet .sheet-actions {
+      margin-top: auto;
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end
+    }
+
+    .list {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden
+    }
+
+    .list .row {
+      display: grid;
+      grid-template-columns: 36px 96px 1fr 100px 100px 64px;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px;
+      border-top: 1px solid var(--border)
+    }
+
+    .list .row:first-child {
+      background: rgba(148, 163, 184, .10);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      border-top: 0
+    }
+
+    .list .row.h {
+      font-size: 12px;
+      color: #94a3b8;
+      font-weight: 800;
+      letter-spacing: .3px;
+      text-transform: uppercase
+    }
+
+    .list .row:hover {
+      background: rgba(148, 163, 184, .06)
+    }
+
+    .list .tag {
+      padding: .15rem .5rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-weight: 800
+    }
+
+    .list .tag.Urgent {
+      border-color: #fb7185;
+      color: #fecdd3
+    }
+
+    .list .tag.High {
+      border-color: #f59e0b;
+      color: #fde68a
+    }
+
+    .list .tag.Normal {
+      border-color: #60a5fa;
+      color: #bfdbfe
+    }
+
+    .mini {
+      font-size: 12px
+    }
+
+    .demo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #1b2b44;
+      border: 1px solid #2b3c58;
+      color: #9ec1ff;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px
+    }
+
+    /* Machine Grid Polish - SAFE & CLEAN */
+    #machineGrid .line-row {
+      margin-bottom: 24px;
+    }
+
+    #machineGrid .line-title {
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    #machineGrid .machine-row {
+      display: grid;
+      /* Spacious 170px */
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 16px;
+    }
+
+    .machine {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: left;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      min-height: 64px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      /* Subtle shadow */
+      overflow: hidden;
+      width: 100%;
+      position: relative;
+    }
+
+    .machine:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      border-color: #cbd5e1;
+      z-index: 10;
+    }
+
+    /* Status Border Line (Left) */
+    .machine {
+      border-left: 5px solid #cbd5e1;
+    }
+
+    .machine.s-running {
+      border-left-color: #22c55e;
+      background: linear-gradient(to right, #f0fdf4 0%, #ffffff 100%);
+    }
+
+    .machine.s-stopped {
+      border-left-color: #ef4444;
+      background: linear-gradient(to right, #fef2f2 0%, #ffffff 100%);
+    }
+
+    .machine.s-maint {
+      border-left-color: #f59e0b;
+      background: linear-gradient(to right, #fffbeb 0%, #ffffff 100%);
+    }
+
+    /* Typography */
+    .machine .name {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: #1e293b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+      max-width: 100%;
+    }
+
+    .machine .sub {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.4;
+      max-width: 100%;
+    }
+
+    .machine.s-running .sub {
+      color: #15803d;
+      font-weight: 600;
+    }
+
+    /* ... rest ... */
+
+    .machine .status-text {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-top: 6px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .machine.s-running .status-text {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .machine.s-stopped .status-text {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    :root {
+      --glass: rgba(255, 255, 255, 0.75);
+      --glass-border: rgba(255, 255, 255, 0.5);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    }
+
+    /* Master Toolbar */
+    .toolbar {
+      background: var(--glass) !important;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      transition: box-shadow 0.2s;
+    }
+
+    .toolbar:hover {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Search & Inputs */
+    .search {
+      position: relative;
+    }
+
+    .search input {
+      padding-left: 30px !important;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      transition: all 0.2s;
+    }
+
+    .search input:focus {
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+      border-color: #3b82f6;
+    }
+
+    .search i {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      pointer-events: none;
+    }
+
+    /* Master Table Grid */
+    .list {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: var(--shadow-xl);
+      overflow: hidden;
+      /* For radius */
+    }
+
+    .list .row.h {
+      background: #f8fafc;
+      border-bottom: 2px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: #475569;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 12px 14px;
+      /* More breathing room */
+    }
+
+    .list .row {
+      display: grid;
+      padding: 14px 16px;
+      /* Bigger rows */
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.15s;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+
+    .list .row:last-child {
+      border-bottom: none;
+    }
+
+    .list .row:not(.h):hover {
+      background: #f0f9ff !important;
+      transform: translateY(-1px);
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Status Pills */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.025em;
+      border: 1px solid transparent;
+    }
+
+    /* Running / Good */
+    .tag.g {
+      background: #dcfce7;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+
+    /* Stopped / Bad */
+    .tag.r {
+      background: #fee2e2;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+
+    /* Completed / Info */
+    .tag.b {
+      background: #dbeafe;
+      color: #1e40af;
+      border-color: #bfdbfe;
+    }
+
+    /* Warning / Maint */
+    .tag.y {
+      background: #fef9c3;
+      color: #854d0e;
+      border-color: #fde047;
+    }
+
+    /* Neutral / Normal */
+    .tag.Normal {
+      background: #f1f5f9;
+      color: #475569;
+      border-color: #e2e8f0;
+    }
+
+    /* Urgent Priority */
+    .tag.Urgent {
+      background: #7f1d1d;
+      /* Deep red */
+      color: #fee2e2;
+      border: 1px solid #991b1b;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    /* High Priority */
+    .tag.High {
+      background: #fffbeb;
+      color: #b45309;
+      border-color: #fcd34d;
+    }
+
+    /* Modal Polish */
+    .modal-card {
+      border-radius: 20px !important;
+      box-shadow: var(--shadow-2xl) !important;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+    }
+
+    .modal-head {
+      background: transparent;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      padding: 16px 20px;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-actions {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 16px 20px;
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+    }
+
+    /* Tabs (Segmented Control) */
+    .tabs {
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 12px;
+      border: none;
+      gap: 0;
+      display: inline-flex;
+      width: auto;
+    }
+
+    .tab {
+      border-radius: 8px;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #64748b;
+      border: none;
+      transition: all 0.2s;
+      margin: 0;
+    }
+
+    .tab.active {
+      background: #fff;
+      color: #3b82f6;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transform: none;
+      /* Reset distinct hover interaction if any */
+    }
+
+    .tab:not(.active):hover {
+      color: #475569;
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    /* Button Glows */
+    .btn.primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      border: none;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .btn.primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 12px -2px rgba(59, 130, 246, 0.5);
+    }
+
+    .btn.primary:active {
+      transform: translateY(0);
+    }
+
+    /* Timeline Styles */
+    .timeline-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .timeline-row {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      min-height: 80px;
+    }
+
+    .timeline-header {
+      width: 160px;
+      flex-shrink: 0;
+      background: #f8fafc;
+      border-right: 1px solid #e2e8f0;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .timeline-header .name {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: #1e293b;
+    }
+
+    .timeline-header .sub {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .timeline-track {
+      flex: 1;
+      overflow-x: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .timeline-card {
+      min-width: 140px;
+      max-width: 140px;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .timeline-card .head {
+      font-weight: 700;
+      color: #334155;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .timeline-card .info {
+      font-size: 0.75rem;
+      color: #64748b;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .timeline-card .meta {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .timeline-card.running {
+      background: #f0fdf4;
+      border-color: #86efac;
+    }
+
+    .timeline-card.running .meta {
+      color: #16a34a;
+    }
+
+    .timeline-card.running .head {
+      color: #15803d;
+    }
+
+    .timeline-card.stopped {
+      background: #fee2e2;
+      border-color: #fca5a5;
+    }
+
+    .timeline-card.stopped .meta {
+      color: #dc2626;
+    }
+
+    .timeline-empty {
+      color: #cbd5e1;
+      font-style: italic;
+      font-size: 0.85rem;
+      margin-left: 10px;
+    }
+
+    /* Row Selection Highlighting */
+    .row.selected {
+      background-color: #e0f2fe !important;
+      border-bottom: 1px solid #3b82f6 !important;
+    }
+
+    .row.selected>div {
+      font-weight: 600;
+      color: #0f172a;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="backdrop" id="sidebarBackdrop"></div>
+  <div id="app"></div>
+
+  <!-- App shell -->
+  <script defer src="/assets/app.js" onerror="alert('Failed to load /assets/app.js');"></script>
+
+  <script defer>
+    // --- Boot Routing Logic ---
+
+    // GLOBAL ACTIONS (Defined early to ensure availability for inline onclicks)
+    window.activatePlan = async function (id, orderNo, force = false, confirmMsg = null) {
+      const j = window.JPSMS;
+      if (!j || !j.api) { alert('System not fully loaded. Please wait.'); return; }
+
+      const msg = confirmMsg || `Activate Order ${orderNo}? This will push it to the Supervisor Queue.`;
+      if (!confirm(msg)) return;
+
+      try {
+        const res = await j.api.post('/planning/run', { rowId: id, force });
+
+        if (res && res.ok) {
+          if (j.toast) j.toast('Plan Activated successfully!', 'success');
+          if (typeof window.loadMasterPlan === 'function') window.loadMasterPlan();
+          else window.location.reload();
+        }
+        else if (res && res.requireConfirm && res.runningPlan) {
+          // SWAP LOGIC
+          const rp = res.runningPlan;
+          const swapMsg = `Machine ${rp.machine} is currently running Order ${rp.order_no} (${rp.item_name}).\n\nDo you want to STOP it and START Order ${orderNo}?`;
+          // Recursive call with force=true
+          setTimeout(() => window.activatePlan(id, orderNo, true, swapMsg), 100);
+        }
+        else {
+          if (j.toast) j.toast(res.error || 'Failed to activate', 'error');
+          else alert(res.error || 'Failed');
+        }
+      } catch (e) {
+        console.error('Activation Error:', e);
+        if (j.toast) j.toast(e.message || 'Error occurred', 'error');
+        else alert(e.message);
+      }
+    };
+
+    // Audit Log Functionality
+    window.showAuditLog = async function () {
+      const j = window.JPSMS;
+      if (!j || !j.api) return;
+
+      // Simple Modal for Audit Log
+      const backdrop = document.createElement('div');
+      backdrop.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;justify-content:center;align-items:center';
+      backdrop.onclick = (e) => { if (e.target === backdrop) document.body.removeChild(backdrop); };
+
+      const card = document.createElement('div');
+      card.style.cssText = 'background:white;width:800px;max-width:90%;max-height:80vh;border-radius:12px;padding:20px;display:flex;flex-direction:column;box-shadow:0 10px 25px rgba(0,0,0,0.2)';
+      card.innerHTML = `<div style="font-weight:700; font-size:1.2rem; margin-bottom:15px; display:flex; justify-content:space-between">
+            <span>Plan Activity Log</span>
+            <button onclick="this.closest('div').parentElement.parentElement.remove()" style="border:none;background:none;cursor:pointer;font-size:1.2rem">&times;</button>
+        </div>
+        <div style="flex:1; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px">
+            <table style="width:100%; border-collapse:collapse; font-size:0.9rem">
+                <thead style="background:#f1f5f9; position:sticky; top:0">
+                    <tr>
+                        <th style="padding:10px; text-align:left; color:#64748b">Time</th>
+                        <th style="padding:10px; text-align:left; color:#64748b">Action</th>
+                        <th style="padding:10px; text-align:left; color:#64748b">Details</th>
+                        <th style="padding:10px; text-align:left; color:#64748b">User</th>
+                    </tr>
+                </thead>
+                <tbody id="auditLogBody">
+                    <tr><td colspan="4" style="padding:20px; text-align:center; color:#94a3b8">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>`;
+
+      backdrop.appendChild(card);
+      document.body.appendChild(backdrop);
+
+      try {
+        const logs = await j.api.get('/planning/audit');
+        console.log('Audit Logs:', logs); // DEBUG
+        if (!Array.isArray(logs) && logs.error) throw new Error(logs.error);
+
+        const tbody = card.querySelector('#auditLogBody');
+        tbody.innerHTML = '';
+
+        const list = Array.isArray(logs) ? logs : [];
+
+        if (!list.length) {
+          tbody.innerHTML = `<tr><td colspan="4" style="padding:20px; text-align:center; color:#94a3b8">No activity recorded.</td></tr>`;
+          return;
+        }
+
+        list.forEach(l => {
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid #f1f5f9';
+          let det = l.details;
+          if (typeof det === 'string') try { det = JSON.parse(det) } catch (e) { }
+
+          let detailStr = '';
+          if (det) {
+            if (det.reason) detailStr += `<div style="color:#ef4444">${det.reason}</div>`;
+            if (det.machine) detailStr += `<b>${det.machine}</b>`;
+            if (det.order) detailStr += ` Order: ${det.order}`;
+          }
+
+          let actionColor = '#334155';
+          if (l.action === 'ACTIVATE') actionColor = '#16a34a';
+          if (l.action === 'DELETE') actionColor = '#ef4444';
+          if (l.action === 'SWAP_STOP') actionColor = '#f59e0b';
+
+          tr.innerHTML = `
+                    <td style="padding:8px 10px; color:#475569">${new Date(l.created_at).toLocaleString()}</td>
+                    <td style="padding:8px 10px; font-weight:600; color:${actionColor}">${l.action}</td>
+                    <td style="padding:8px 10px; color:#334155">${detailStr}</td>
+                    <td style="padding:8px 10px; color:#64748b">${l.user_name || 'System'}</td>
+                `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (e) {
+        console.error('Audit Log Error:', e);
+        if (j.toast) j.toast('Failed to load logs: ' + e.message, 'error');
+        const tbody = card.querySelector('#auditLogBody');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="padding:20px; text-align:center; color:#ef4444">Error loading logs: ${e.message}</td></tr>`;
+      }
+    };
+
+    window.stopPlan = async function (id, orderNo) {
+      if (!confirm(`Stop Plan for Order ${orderNo}?`)) return;
+      const j = window.JPSMS;
+      try {
+        const res = await j.api.post('/planning/stop', { rowId: id });
+        if (res && res.ok) {
+          if (j.toast) j.toast('Plan Stopped', 'success');
+          if (window.loadMasterPlan) window.loadMasterPlan();
+          else window.location.reload();
+        } else {
+          alert(res.error || 'Failed');
+        }
+      } catch (e) { alert(e.message); }
+    };
+
+    window.movePlan = async function (planId, targetMachine) {
+      // console.log('movePlan called:', { planId, targetMachine });
+      if (!planId || !targetMachine) {
+        alert(`Move Error: Missing ID (${planId}) or Machine (${targetMachine})`);
+        return;
+      }
+
+      // Optimistic UI Update for "Instant" feel
+      // 1. Find plan in local global array
+      const pIndex = timelinePlans.findIndex(p => p.id === planId);
+      if (pIndex > -1) {
+        const plan = timelinePlans[pIndex];
+
+        // Update local model
+        plan.machine = targetMachine;
+        if (plan.status === 'Running') plan.status = 'Stopped'; // Optimistic status update
+
+        // Re-render immediately
+        if (window.renderTimeline) window.renderTimeline();
+      }
+
+      const j = window.JPSMS;
+      if (!j || !j.api) {
+        alert('System not fully loaded. Cannot move plan.');
+        return;
+      }
+
+      try {
+        // Using targetMachine param (server accepts it or newMachine)
+        const res = await j.api.post('/planning/move', { rowId: planId, targetMachine: targetMachine });
+        if (res && res.ok) {
+          if (j.toast) j.toast(`Plan moved to ${targetMachine}`, 'success');
+          // Background refresh to sync true state
+          if (window.loadTimeline) window.loadTimeline();
+          if (window.loadMasterPlan) window.loadMasterPlan();
+        } else {
+          alert('Server Error: ' + (res.error || 'Unknown'));
+          // Revert optimistic update if failed
+          if (window.loadTimeline) window.loadTimeline();
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Network/Client Error: ' + e.message);
+        if (window.loadTimeline) window.loadTimeline();
+      }
+    };
+
+    window.removePlan = async function (id, orderNo) {
+      const j = window.JPSMS;
+      if (!j || !j.api) { alert('System not fully loaded.'); return; }
+
+      if (!confirm(`Remove Plan for Order ${orderNo}?`)) return;
+      try {
+        const res = await j.api.post('/planning/delete', { rowId: id });
+        if (res && res.ok) {
+          if (j.toast) j.toast('Plan removed', 'success');
+          if (typeof window.loadMasterPlan === 'function') window.loadMasterPlan();
+          else window.location.reload();
+        } else {
+          if (j.toast) j.toast(res.error || 'Failed to remove', 'error');
+          else alert(res.error || 'Failed');
+        }
+      } catch (e) {
+        if (j.toast) j.toast(e.message, 'error');
+        else alert(e.message);
+      }
+    };
+
+    window.deleteAllPlans = async function () {
+      const j = window.JPSMS;
+      if (!j || !j.api || !j.store) return;
+
+      const me = j.store.me || {};
+      if (me.role_code !== 'admin') { alert('Access Denied: Admins only.'); return; }
+
+      if (!confirm("⚠️ DANGER: This will DELETE ALL PLANS from the board.\n\nAre you sure you want to proceed?")) return;
+      if (!confirm("This action cannot be undone. Confirm delete all?")) return;
+
+      try {
+        const res = await j.api.post('/planning/delete-all', { user: me.name });
+        if (res && res.ok) {
+          j.toast('All Plans Deleted.', 'success');
+          if (typeof window.loadMasterPlan === 'function') window.loadMasterPlan();
+          else window.location.reload();
+        } else {
+          j.toast(res.error || 'Failed', 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        j.toast(e.message, 'error');
+      }
+    };
+
+    /* ------------------ Timeline Logic (Global) ------------------ */
+
+
+
+    /* ==========================================================================
+       JPSMS Planning Module - FULLY RESTORED & PREMIUM
+       ========================================================================== */
+
+    // --- Global State ---
+    let timelineMachines = [];
+    let timelinePlans = [];
+    let masterPlans = [];
+    let pendingOrders = [];
+    let lastMachines = []; // for create modal
+
+    // Filter State
+    let filterStatus = '';
+    let filterBuilding = '';
+    let filterTonnage = '';
+    let filterSearch = '';
+
+    // --- Timeline Functions (PRESERVED PREMIUM) ---
+
+    window.loadTimeline = async function () {
+      console.log('Loading Timeline...');
+      const con = document.getElementById('timelineContainer');
+
+      try {
+        const api = window.JPSMS.api;
+        if (!api) return;
+
+        // 1. Fetch Machines
+        const mRes = await api.get('/machines/status');
+        timelineMachines = (mRes && mRes.data) ? mRes.data : [];
+        lastMachines = timelineMachines; // Sync for create plan
+
+        // 2. Fetch Plans
+        const pRes = await api.get('/planning/board');
+        timelinePlans = (pRes && pRes.data && pRes.data.plans) ? pRes.data.plans : [];
+
+        // 3. Populate Tonnage Dropdown
+        const tonnages = [...new Set(timelineMachines.map(m => m.tonnage).filter(t => t != null && t !== '').map(Number))].sort((a, b) => a - b);
+        const tSel = document.getElementById('tlTonnage');
+        if (tSel) {
+          const cur = tSel.value;
+          tSel.innerHTML = '<option value="">All Tons</option>' + tonnages.map(t => `<option value="${t}">${t}T</option>`).join('');
+          tSel.value = cur;
+        }
+
+        if (window.renderTimeline) window.renderTimeline();
+      } catch (e) {
+        console.error('loadTimeline Error:', e);
+        if (con) con.innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    };
+
+    window.renderTimeline = function () {
+      const con = document.getElementById('timelineContainer');
+      if (!con) return;
+
+      const esc = (s) => s ? String(s).replace(/</g, '&lt;') : '';
+
+      // Read Filters
+      const q = (document.getElementById('tlSearch') ? document.getElementById('tlSearch').value : '').toLowerCase().trim();
+      const b = document.getElementById('tlBuilding') ? document.getElementById('tlBuilding').value : '';
+      const tVal = document.getElementById('tlTonnage') ? document.getElementById('tlTonnage').value : '';
+      const sVal = document.getElementById('tlStatus') ? document.getElementById('tlStatus').value : '';
+
+      // Filter Logic
+      let visibleMachines = timelineMachines.filter(m => {
+        if (b && String(m.building) !== b) return false;
+        if (tVal && Number(m.tonnage) !== Number(tVal)) return false;
+
+        if (sVal) {
+          const mStatus = (m.status || '').toLowerCase();
+          if (sVal === 'Running' && mStatus !== 'running') return false;
+          // Strict 'Stopped' Check
+          if (sVal === 'Stopped' && mStatus !== 'stopped' && mStatus !== 'off') return false;
+          if (sVal === 'Planned') {
+            const plans = timelinePlans.filter(p => p.machine === m.code);
+            if (!plans.length) return false;
+          }
+        }
+
+        if (q) {
+          if ((m.code + ' ' + m.name).toLowerCase().includes(q)) return true;
+          const plans = timelinePlans.filter(p => p.machine === m.code);
+          return plans.some(p => (p.orderNo || '').toLowerCase().includes(q) || (p.itemName || '').toLowerCase().includes(q));
+        }
+        return true;
+      });
+
+      visibleMachines.sort((a, b) => (a.building || '').localeCompare(b.building || '') || (a.line || '').localeCompare(b.line || ''));
+
+      // Group Plans
+      const groups = {};
+      timelinePlans.forEach(p => {
+        if (!groups[p.machine]) groups[p.machine] = [];
+        groups[p.machine].push(p);
+      });
+
+      con.innerHTML = '';
+      if (!visibleMachines.length) {
+        con.innerHTML = '<div style="padding:40px; text-align:center; color:#94a3b8">No machines found matching filter.</div>';
+        return;
+      }
+
+      visibleMachines.forEach(m => {
+        const mPlans = groups[m.code] || [];
+        mPlans.sort((a, b) => a.seq - b.seq);
+
+        const row = document.createElement('div');
+        row.className = 'timeline-row';
+        row.dataset.machine = m.code;
+
+        // Drag Drop
+        row.ondragover = (e) => { e.preventDefault(); row.style.background = '#f0f9ff'; row.style.borderColor = '#3b82f6'; };
+        row.ondragleave = (e) => { row.style.background = '#fff'; row.style.borderColor = '#e2e8f0'; };
+        row.ondrop = (e) => {
+          e.preventDefault();
+          row.style.background = '#fff';
+          row.style.borderColor = '#e2e8f0';
+          const planId = e.dataTransfer.getData('text/plain');
+          if (planId) window.movePlan(planId, m.code);
+        };
+
+        const cards = mPlans.map(p => {
+          let st = (p.status || '').toLowerCase();
+          let cls = st === 'running' ? 'running' : (st === 'stopped' ? 'stopped' : '');
+          return `
+            <div class="timeline-card ${cls}" draggable="true" ondragstart="event.dataTransfer.setData('text/plain', '${p.id}')"
+                 style="min-width:180px; padding:12px; background:#fff; border-radius:8px; border:1px solid #e2e8f0; border-left-width:4px; cursor:grab"
+                 title="Order: ${esc(p.orderNo)}">
+               <div style="font-size:0.75rem; color:#94a3b8; font-weight:700">${esc(p.orderNo)}</div>
+               <div style="font-weight:600; color:#334155; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${esc(p.itemName)}</div>
+               <div style="display:flex; justify-content:space-between; font-size:0.8rem">
+                  <span style="font-family:monospace">${p.planQty.toLocaleString()}</span>
+                  <span class="tag mini">${st || 'Queue'}</span>
+               </div>
+            </div>`;
+        }).join('');
+
+        // Visuals (Premium)
+        const mSt = (m.status || '').toLowerCase();
+        let mStColor = '#e2e8f0';
+        let mStBg = '#f8fafc';
+        let mStTxt = 'Stopped';
+
+        if (mSt === 'running') {
+          mStColor = '#22c55e'; mStBg = '#f0fdf4'; mStTxt = 'Running';
+        } else if (mSt === 'stopped' || mSt === 'off') {
+          mStColor = '#ef4444'; mStBg = '#fef2f2'; mStTxt = 'Stopped';
+        }
+
+        row.innerHTML = `
+            <div style="width:180px; padding:12px; border-right:1px solid #e2e8f0; display:flex; flex-direction:column; justify-content:center; 
+                        background:${mStBg}; border-left:4px solid ${mStColor}; transition:all 0.2s">
+                <div style="font-weight:800; color:#1e293b; font-size:1rem; line-height:1.2; overflow:hidden; text-overflow:ellipsis" title="${esc(m.code)}">
+                  ${esc(m.code)}
+                </div>
+                 <div style="font-size:0.75rem; color:#64748b; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis" title="${esc(m.name)}">
+                   ${esc(m.name || '-')}
+                </div>
+                <div style="margin-top:6px; font-size:0.7rem; font-weight:700; text-transform:uppercase; color:${mStColor}; letter-spacing:0.5px">
+                   ${mStTxt}
+                </div>
+            </div>
+            <div style="flex:1; padding:10px; display:flex; gap:12px; overflow-x:auto; align-items:center;">
+                ${cards}
+            </div>`;
+        con.appendChild(row);
+      });
+    };
+
+    window.movePlan = async function (planId, targetMachine) {
+      if (!confirm('Move plan to ' + targetMachine + '?')) return;
+      try {
+        await window.JPSMS.api.post('/planning/move', { rowId: planId, targetMachine });
+        window.JPSMS.toast('Plan moved', 'success');
+        loadTimeline();
+      } catch (e) { alert(e.message); }
+    };
+
+    // --- Master Plan Functions (RESTORED) ---
+
+    window.loadMasterPlan = async function () {
+      console.log('Loading Master Plan...');
+      const con = document.getElementById('masterTableBody');
+      if (!con) return;
+      con.innerHTML = '<div class="loading">Loading Master Plan...</div>';
+
+      try {
+        const api = window.JPSMS.api;
+        // We use the board endpoint but render as table
+        const res = await api.get('/planning/board');
+        const plans = (res && res.data && res.data.plans) ? res.data.plans : [];
+
+        window.renderMasterTable(plans);
+      } catch (e) {
+        con.innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    };
+
+    window.renderMasterTable = function (plans) {
+      const con = document.getElementById('masterTableBody');
+      const esc = (s) => s ? String(s).replace(/</g, '&lt;') : '';
+
+      // Filters for Master
+      const q = (document.getElementById('masterSearch').value || '').toLowerCase().trim();
+      const b = document.getElementById('masterBuilding').value;
+
+      let filtered = plans.filter(p => {
+        if (b && p.machine && !String(p.machine).startsWith(b)) return false; // Rough building check if machine name has logic, else ignore
+        if (q) {
+          return (p.orderNo || '').toLowerCase().includes(q) || (p.itemName || '').toLowerCase().includes(q) || (p.machine || '').toLowerCase().includes(q);
+        }
+        return true;
+      });
+
+      if (!filtered.length) {
+        con.innerHTML = '<div style="padding:20px; text-align:center">No plans found.</div>';
+        return;
+      }
+
+      let html = '<table class="n-table"><thead><tr><th>ID</th><th>Machine</th><th>Order</th><th>Item</th><th>Qty</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+      filtered.forEach(p => {
+        html += `<tr>
+              <td>${p.id}</td>
+              <td><strong>${esc(p.machine)}</strong></td>
+              <td>${esc(p.orderNo)}</td>
+              <td>${esc(p.itemName)}</td>
+              <td>${p.planQty.toLocaleString()}</td>
+              <td><span class="tag">${p.status}</span></td>
+              <td>
+                 <button class="btn icon small danger" onclick="deletePlan('${p.id}')"><i class="bi bi-trash"></i></button>
+              </td>
+           </tr>`;
+      });
+      html += '</tbody></table>';
+      con.innerHTML = html;
+    };
+
+    window.deletePlan = async function (id) {
+      if (!confirm('Delete plan ' + id + '?')) return;
+      try {
+        await window.JPSMS.api.post('/planning/delete', { id });
+        window.JPSMS.toast('Plan deleted');
+        loadMasterPlan();
+        loadTimeline();
+      } catch (e) { alert(e.message); }
+    };
+
+    window.deleteAllPlans = async function () {
+      if (!confirm('DELETE ALL PLANS?')) return;
+      try {
+        await window.JPSMS.api.post('/planning/delete-all', { user: window.JPSMS.store.me.name });
+        window.JPSMS.toast('Deleted All', 'success');
+        loadMasterPlan();
+        loadTimeline();
+      } catch (e) { alert(e.message); }
+    };
+
+    // --- Create Plan Logic (RESTORED) ---
+
+    window.openCreatePlanLauncher = async function () {
+      // Open the modal
+      const m = document.getElementById('newCreatePlanModal');
+      if (m) {
+        m.classList.add('show'); m.setAttribute('aria-hidden', 'false');
+        await loadPendingOrders();
+      }
+    };
+
+    window.loadPendingOrders = async function () {
+      const list = document.getElementById('cpOrderList');
+      if (!list) return;
+      list.innerHTML = '<div class="loading">Loading orders...</div>';
+      try {
+        const api = window.JPSMS.api;
+        const res = await api.get('/planning/orders/pending');
+        pendingOrders = (res && res.data) ? res.data : [];
+
+        if (!pendingOrders.length) {
+          list.innerHTML = '<div class="muted" style="padding:10px">No pending orders.</div>';
+          return;
+        }
+
+        list.innerHTML = '';
+        pendingOrders.forEach(o => {
+          const el = document.createElement('div');
+          el.className = 'cp-order-row';
+          el.style.padding = '10px'; el.style.borderBottom = '1px solid #eee'; el.style.cursor = 'pointer';
+          el.innerHTML = `<div><strong>${o.orderNo}</strong></div><div style="font-size:0.8rem; color:#666">${o.productName || o.itemName}</div>`;
+          el.onclick = () => selectOrderForPlan(o);
+          list.appendChild(el);
+        });
+      } catch (e) {
+        list.innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    };
+
+
+    window.selectOrderForPlan = async function (o) {
+      window.cpSelectedOrder = o;
+      window.cpSelectedMould = null; // Reset
+
+      document.getElementById('cpEmptyState').style.display = 'none';
+      const det = document.getElementById('cpDetailContent');
+      det.style.display = 'flex';
+      det.innerHTML = '<div class="loading">Loading details...</div>';
+
+      try {
+        const api = window.JPSMS.api;
+        // Fetch Details (Moulds)
+        const dRes = await api.get('/planning/orders/' + encodeURIComponent(o.orderNo || o.order_no) + '/details');
+        const details = (dRes && dRes.data) ? dRes.data : [];
+
+        // Build UI Structure
+        det.innerHTML = `
+                <!-- Header (Order Info) -->
+                <div style="padding:15px; border-bottom:1px solid #eee; background:#fff">
+                   <div style="font-size:1.1rem; font-weight:800; color:#1e293b">${o.orderNo || o.order_no}</div>
+                   <div style="color:#64748b; font-size:0.9rem">${o.productName || o.itemName || o.item_name}</div>
+                   <div style="font-size:0.85rem; color:#94a3b8; margin-top:2px">Qty: ${o.qty || o.jr_qty}</div>
+                </div>
+                
+                <!-- Mould Selection List (Radio) -->
+                <div style="padding:15px; background:#f8fafc; border-bottom:1px solid #eee">
+                   <div style="font-size:0.75rem; font-weight:700; color:#64748b; margin-bottom:10px; text-transform:uppercase">Select Mould / Item</div>
+                   <div id="cpMouldList" style="display:flex; flex-direction:column; gap:8px"></div>
+                </div>
+                
+                <!-- Machine Selection Section -->
+                <div id="cpMachineSection" style="padding:15px; flex:1; overflow-y:auto; display:none; background:#fff">
+                   <div style="margin-bottom:12px; display:flex; align-items:center; justify-content:space-between">
+                       <span style="font-size:0.8rem; font-weight:700; color:#64748b; text-transform:uppercase">Select Machine</span>
+                       <span id="cpTargetTonnage" class="tag" style="background:#dbeafe; color:#1e40af; border:none; px:8px; py:2px">0T</span>
+                   </div>
+                   <div id="cpMachineList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px"></div>
+                </div>
+            `;
+
+        const mList = document.getElementById('cpMouldList');
+
+        if (!details.length) {
+          mList.innerHTML = '<div class="warn">No mould info found.</div>';
+          // Show all machines? Or hide? Let's show all for safety.
+          renderMachines(0);
+        } else {
+          // Render Mould Rows
+          mList.innerHTML = details.map((d, i) => {
+            const t = Number(d.reportTonnage) || 0;
+            const cav = d.reportCavity || d.masterCavity || '?';
+            const ct = d.reportCycleTime || d.masterCycleTime || '?';
+            return `
+                    <label style="display:flex; align-items:start; gap:10px; padding:10px; background:#fff; border:1px solid #e2e8f0; border-radius:6px; cursor:pointer; transition:all 0.2s" class="mould-row">
+                        <input type="radio" name="cpMouldRadio" value="${i}" ${i === 0 ? 'checked' : ''} style="margin-top:4px" onchange="onMouldSelect(${i})">
+                        <div style="flex:1">
+                            <div style="font-weight:700; color:#334155; font-size:0.9rem; display:flex; align-items:center">
+                                ${d.mould_name || d.mould_no || 'Unknown Item'} <span style="margin-left:6px; color:#f59e0b; display:${(d.remarks || d.is_warning) ? 'inline' : 'none'}">⚠️</span>
+                            </div>
+                            <div style="font-size:0.8rem; color:#64748b; margin-top:2px">
+                                Item: ${d.item_code || '-'} &bull;
+                                Tonnage: <strong>${t}</strong> &bull; 
+                                Cav: ${cav} &bull; 
+                                CT: ${ct}s
+                            </div>
+                        </div>
+                    </label>
+                    `;
+          }).join('');
+
+          // Store details for access
+          window.cpCurrentMoulds = details;
+
+          // Auto-select first
+          onMouldSelect(0);
+        }
+
+      } catch (e) {
+        det.innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    };
+
+    // Helper: On Mould Select -> Filter Machines
+    window.onMouldSelect = function (idx) {
+      const m = window.cpCurrentMoulds[idx];
+      window.cpSelectedMould = m;
+      const tonnage = Number(m.reportTonnage) || 0;
+
+      // Update UI
+      document.querySelectorAll('.mould-row').forEach(el => el.style.borderColor = '#e2e8f0');
+      const input = document.querySelector(`input[name="cpMouldRadio"][value="${idx}"]`);
+      if (input) input.closest('label').style.borderColor = '#3b82f6';
+
+      document.getElementById('cpMachineSection').style.display = 'block';
+      document.getElementById('cpTargetTonnage').textContent = tonnage ? tonnage + 'T' : 'Any';
+
+      renderMachines(tonnage);
+    };
+
+    // Helper: Render Machines Grid
+    window.renderMachines = function (targetTonnage) {
+      const grid = document.getElementById('cpMachineList');
+      grid.innerHTML = '';
+
+      // Filter & Sort
+      const candidates = window.lastMachines.filter(m => {
+        if (targetTonnage > 0 && Number(m.tonnage) !== targetTonnage) return false;
+        return true;
+      });
+
+      // Sort: Available (status='Stopped'/'Running'?? No, 'Running' is busy. 'Stopped' is available? Or 'Off'?
+      // The screenshot says "AVAILABLE" in Green. Usually implies NOT Running.
+      // My data has m.status = 'Running' or 'Stopped'.
+      // I will assume 'Stopped' =  Available for now.
+
+      candidates.sort((a, b) => {
+        const aBusy = (a.status || '').toLowerCase() === 'running';
+        const bBusy = (b.status || '').toLowerCase() === 'running';
+        if (aBusy !== bBusy) return aBusy ? 1 : -1; // Busy last
+        return 0; // Tonnage is equal anyway
+      });
+
+      candidates.forEach(m => {
+        const isBusy = (m.status || '').toLowerCase() === 'running';
+        const statusLabel = isBusy ? 'BUSY' : 'AVAILABLE';
+        const statusColor = isBusy ? '#f59e0b' : '#16a34a'; // Orange vs Green
+        const bg = isBusy ? '#fff' : '#f0fdf4'; // White vs Light Green tint
+
+        const div = document.createElement('div');
+        div.className = 'machine-card-select';
+        div.style.cssText = `
+                background:${bg}; border:1px solid ${isBusy ? '#e2e8f0' : '#bbf7d0'}; 
+                border-radius:8px; padding:12px; cursor:pointer; position:relative;
+                transition:all 0.2s;`;
+
+        div.innerHTML = `
+                <div style="border-bottom:1px solid #f1f5f9; padding-bottom:8px; margin-bottom:8px">
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                        <div style="font-weight:800; color:#1e293b; font-size:0.95rem">${m.code} <span style="font-weight:400; color:#94a3b8; font-size:0.85rem; margin-left:4px">${m.tonnage}T</span></div>
+                    </div>
+                    <div style="font-size:0.75rem; color:#64748b; margin-top:2px">${m.line || ''} ${m.building || ''}</div>
+                </div>
+                <div style="font-size:0.75rem; font-weight:700; color:${statusColor}; letter-spacing:0.5px; text-transform:uppercase">
+                   ${statusLabel}
+                </div>
+            `;
+
+        div.onclick = () => {
+          window.cpSelectedMachine = m;
+          document.querySelectorAll('.machine-card-select').forEach(d => {
+            d.style.ring = 'none'; d.style.borderColor = isBusy ? '#e2e8f0' : '#bbf7d0';
+          });
+          div.style.borderColor = '#2563eb';
+          div.style.boxShadow = '0 0 0 2px #3b82f6';
+          document.getElementById('cpSaveBtn').disabled = false;
+        };
+
+        grid.appendChild(div);
+      });
+
+      if (!candidates.length) {
+        grid.innerHTML = '<div class="muted">No compatible machines found.</div>';
+      }
+    };
+
+
+    window.createPlan = async function () {
+      if (!cpSelectedOrder || !cpSelectedMachine) return;
+      try {
+        const api = window.JPSMS.api;
+        await api.post('/planning/create', {
+          planId: 'PLAN-' + Date.now(),
+          plant: 'DUNGRA',
+          orderNo: cpSelectedOrder.orderNo,
+          itemName: cpSelectedOrder.productName || cpSelectedOrder.itemName,
+          machine: cpSelectedMachine.code,
+          planQty: cpSelectedOrder.qty
+        });
+        window.JPSMS.toast('Plan Created');
+        document.getElementById('newCreatePlanModal').classList.remove('show');
+        loadTimeline();
+      } catch (e) { alert(e.message); }
+    };
+
+    // Bind Create Button (Global)
+    document.addEventListener('click', e => {
+      if (e.target && e.target.id === 'cpSaveBtn') window.createPlan();
+      if (e.target && e.target.id === 'cpClose') document.getElementById('newCreatePlanModal').classList.remove('show');
+      if (e.target && e.target.id === 'cpCancelBtn') document.getElementById('newCreatePlanModal').classList.remove('show');
+    });
+
+    // --- Initialization ---
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (!window.JPSMS || !window.JPSMS.renderShell) { alert('Shell not loaded'); return; }
+
+      const { renderShell, api, toast, auth, store } = window.JPSMS;
+      await renderShell("planning");
+      auth.requireAuth();
+
+      const root = document.getElementById("pageContent");
+
+      // UI Template (FULL)
+      root.innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <div class="row-flex"><i class="bi bi-calendar-check"></i><strong>Planning</strong>
+             <span class="chip" id="roleChip">${store.me?.role_code || 'User'}</span>
+          </div>
+          <div class="row-flex">
+             <button class="btn primary" id="btnCreatePlan"><i class="bi bi-plus-circle"></i> Create Plan</button>
+             <button class="btn" id="btnToggleMap"><i class="bi bi-map"></i> View Map</button>
+             <button class="btn" id="btnSwitchView" onclick="toggleView()"><i class="bi bi-table"></i> Master/Timeline</button>
+          </div>
+        </div>
+        <div class="card-body">
+           
+           <!-- Timeline View -->
+           <div id="timelineView">
+               <div class="toolbar" style="margin-bottom:15px; display:flex; gap:10px; align-items:center; background:#f1f5f9; padding:10px; border-radius:8px">
+                   <strong>Timeline:</strong>
+                   <input id="tlSearch" placeholder="Search..." style="padding:6px; border:1px solid #ccc; border-radius:4px" oninput="renderTimeline()">
+                   <select id="tlBuilding" onchange="renderTimeline()" style="padding:6px; border-radius:4px"><option value="">All Bldgs</option><option>B</option><option>C</option><option>E</option><option>F</option></select>
+                   <select id="tlTonnage" onchange="renderTimeline()" style="padding:6px; border-radius:4px"><option value="">All Tons</option></select>
+                   <select id="tlStatus" onchange="renderTimeline()" style="padding:6px; border-radius:4px">
+                      <option value="">All Status</option>
+                      <option value="Running">Running</option>
+                      <option value="Stopped">Stopped</option>
+                      <option value="Planned">Planned</option>
+                   </select>
+                   <button class="btn small" onclick="loadTimeline()">Refresh</button>
+               </div>
+               <div id="timelineContainer" style="display:flex; flex-direction:column; gap:0px; border:1px solid #e2e8f0;"></div>
+           </div>
+
+           <!-- Master View -->
+           <div id="masterView" style="display:none">
+                <div class="toolbar" style="margin-bottom:15px; display:flex; gap:10px;">
+                    <strong>Master Plan:</strong>
+                    <input id="masterSearch" placeholder="Search Master..." oninput="if(window.lastPlans) renderMasterTable(window.lastPlans)" style="padding:6px; border:1px solid #ccc; border-radius:4px">
+                    <select id="masterBuilding" onchange="loadMasterPlan()" style="padding:6px; border-radius:4px"><option value="">All Bldgs</option></select>
+                    <button class="btn small" onclick="loadMasterPlan()">Refresh</button>
+                    <button class="btn small danger" onclick="deleteAllPlans()">Delete All</button>
+                </div>
+                <div class="list" id="masterTableContainer"><div id="masterTableBody"></div></div>
+           </div>
+
+           <!-- Map Wrap -->
+           <div id="mapWrap" style="display:none; padding:20px; border:1px solid #eee; margin-top:20px">
+              <h3>Machine Map (Placeholder)</h3>
+              <div id="machineGrid"></div>
+           </div>
+        </div>
+      </div>
+
+      <!-- Create Plan Modal -->
+      <div id="newCreatePlanModal" class="modal" aria-hidden="true">
+          <div class="modal-card" style="width: 1000px; height: 80vh; display: flex; flex-direction: column;">
+             <div class="modal-head">
+                 <div style="font-weight:700">Create Plan</div>
+                 <button class="btn icon ghost" id="cpClose">X</button>
+             </div>
+             <div class="modal-body" style="flex:1; display:flex; padding:0;">
+                <div style="width:300px; border-right:1px solid #eee; background:#f9f9f9; padding:10px; overflow-y:auto">
+                    <h6>Pending Orders</h6>
+                    <div id="cpOrderList"></div>
+                </div>
+                <div style="flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column">
+                    <div id="cpEmptyState">Select an order from the left</div>
+                    <div id="cpDetailContent" style="display:none; flex-direction:column">
+                        <h2 id="cpTitleOrderNo"></h2>
+                        <h4 id="cpTitleProduct"></h4>
+                        <div id="cpMouldList" style="margin:20px 0"></div>
+                        <div id="cpMachineSection" style="display:none">
+                           <h5>Select Machine (Target: <span id="cpTargetTonnage"></span>)</h5>
+                           <div id="cpMachineList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:10px; margin-top:10px"></div>
+                        </div>
+                    </div>
+                </div>
+             </div>
+             <div class="modal-actions">
+                <button class="btn ghost" id="cpCancelBtn">Cancel</button>
+                <button class="btn primary" id="cpSaveBtn" disabled>Create Plan</button>
+             </div>
+          </div>
+      </div>
+      `;
+
+      // Listeners
+      document.getElementById('btnCreatePlan').onclick = openCreatePlanLauncher;
+
+      document.getElementById('btnToggleMap').onclick = () => {
+        const m = document.getElementById('mapWrap');
+        m.style.display = m.style.display === 'none' ? 'block' : 'none';
+      };
+
+      window.toggleView = function () {
+        const tl = document.getElementById('timelineView');
+        const ms = document.getElementById('masterView');
+        if (tl.style.display !== 'none') {
+          tl.style.display = 'none'; ms.style.display = 'block';
+          loadMasterPlan();
+        } else {
+          ms.style.display = 'none'; tl.style.display = 'block';
+          loadTimeline();
+        }
+      };
+
+      // Initial Load
+      loadTimeline();
+    });
+  </script>
+
+
+</body>
+
+</html>
