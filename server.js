@@ -7,6 +7,14 @@ console.log("-----------------------------------------");
 const path = require('path');
 const express = require('express');
 const { Pool } = require('pg');
+
+const pool = new Pool({
+  host: process.env.PGHOST || process.env.DB_HOST || 'localhost',
+  port: process.env.PGPORT || process.env.DB_PORT || 5432,
+  user: process.env.PGUSER || process.env.DB_USER || 'postgres',
+  password: process.env.PGPASSWORD || process.env.DB_PASSWORD || 'Sanjay@541##',
+  database: process.env.PGDATABASE || process.env.DB_NAME || 'jpsms'
+});
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 const fs = require('fs');
@@ -332,17 +340,7 @@ app.get('/api/qc/reports', async (req, res) => {
 /* =========================
    DATABASE
 ========================= */
-const pool = new Pool({
-  host: process.env.DB_HOST || process.env.PGHOST || 'localhost',
-  port: process.env.DB_PORT || process.env.PGPORT || 5432,
-  user: process.env.DB_USER || process.env.PGUSER || 'postgres',
-  password: process.env.DB_PASSWORD || process.env.PGPASSWORD || 'Sanjay@541##',
-  database: process.env.DB_NAME || process.env.PGDATABASE || 'jpsms',
-  max: 50,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000
-});
-
+// Pool is defined at the top of the file
 async function q(text, params) {
   const { rows } = await pool.query(text, params);
   return rows;
