@@ -136,7 +136,7 @@ function getFactoryId(req) {
 /* =========================
    STATIC FRONTEND
 ========================= */
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const PUBLIC_DIR = path.join(__dirname, 'PUBLIC');
 app.use(express.static(PUBLIC_DIR));
 
 /* ============================================================
