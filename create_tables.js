@@ -1,20 +1,20 @@
 const { Pool } = require('pg');
 
 const pool = new Pool({
-    host: process.env.PGHOST || 'localhost',
-    port: process.env.PGPORT || 5432,
-    user: process.env.PGUSER || 'postgres',
-    password: process.env.PGPASSWORD || 'Sanjay@541##',
-    database: process.env.PGDATABASE || 'jpsms'
+  host: process.env.PGHOST || process.env.DB_HOST || 'localhost',
+  port: process.env.PGPORT || process.env.DB_PORT || 5432,
+  user: process.env.PGUSER || process.env.DB_USER || 'postgres',
+  password: process.env.PGPASSWORD || process.env.DB_PASSWORD || 'Sanjay@541##',
+  database: process.env.PGDATABASE || process.env.DB_NAME || 'jpsms'
 });
 
 async function createTables() {
-    const client = await pool.connect();
-    try {
-        console.log('Connected to database...');
+  const client = await pool.connect();
+  try {
+    console.log('Connected to database...');
 
-        // 1. Users Table
-        await client.query(`
+    // 1. Users Table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         username VARCHAR(255) PRIMARY KEY,
         password VARCHAR(255),
@@ -22,10 +22,10 @@ async function createTables() {
         is_active BOOLEAN DEFAULT TRUE
       );
     `);
-        console.log('Created users table');
+    console.log('Created users table');
 
-        // 2. Machines Table
-        await client.query(`
+    // 2. Machines Table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS machines (
         machine VARCHAR(255) PRIMARY KEY,
         line VARCHAR(50),
@@ -33,10 +33,10 @@ async function createTables() {
         is_active BOOLEAN DEFAULT TRUE
       );
     `);
-        console.log('Created machines table');
+    console.log('Created machines table');
 
-        // 3. Plan Board Table
-        await client.query(`
+    // 3. Plan Board Table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS plan_board (
         id SERIAL PRIMARY KEY,
         plan_id VARCHAR(255) UNIQUE,
@@ -57,10 +57,10 @@ async function createTables() {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
-        console.log('Created plan_board table');
+    console.log('Created plan_board table');
 
-        // 4. Jobs Queue Table
-        await client.query(`
+    // 4. Jobs Queue Table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS jobs_queue (
         id SERIAL PRIMARY KEY,
         plan_id VARCHAR(255),
@@ -79,10 +79,10 @@ async function createTables() {
         complete_geo_acc NUMERIC
       );
     `);
-        console.log('Created jobs_queue table');
+    console.log('Created jobs_queue table');
 
-        // 5. Std Actual Table
-        await client.query(`
+    // 5. Std Actual Table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS std_actual (
         id SERIAL PRIMARY KEY,
         plan_id VARCHAR(255),
@@ -109,10 +109,10 @@ async function createTables() {
         UNIQUE (plan_id, shift, dpr_date, machine)
       );
     `);
-        console.log('Created std_actual table');
+    console.log('Created std_actual table');
 
-        // 6. DPR Hourly Table
-        await client.query(`
+    // 6. DPR Hourly Table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS dpr_hourly (
         id SERIAL PRIMARY KEY,
         dpr_date DATE,
@@ -142,15 +142,15 @@ async function createTables() {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
-        console.log('Created dpr_hourly table');
+    console.log('Created dpr_hourly table');
 
-        console.log('All tables created successfully!');
-    } catch (err) {
-        console.error('Error creating tables:', err);
-    } finally {
-        client.release();
-        await pool.end();
-    }
+    console.log('All tables created successfully!');
+  } catch (err) {
+    console.error('Error creating tables:', err);
+  } finally {
+    client.release();
+    await pool.end();
+  }
 }
 
 createTables();
