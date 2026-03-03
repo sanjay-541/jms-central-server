@@ -9760,6 +9760,40 @@ count(*) as total,
   }
 });
 
+/* =========================
+   VPS FACTORY SYNC ENDPOINTS
+   ========================= */
+
+// Factory Server pushes data up to Central VPS
+app.post('/api/sync/upload', async (req, res) => {
+  try {
+    const { factory_id, payload } = req.body;
+    if (!factory_id) return res.status(400).json({ ok: false, error: 'factory_id required' });
+
+    // In future: Merge payload into Central DB logic goes here
+    console.log(`[SYNC UPLOAD] Received factory ${factory_id} payload size: ${JSON.stringify(payload || {}).length} bytes`);
+
+    res.json({ ok: true, message: 'Sync payload received successfully' });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Factory Server pulls updated configurations from Central VPS
+app.get('/api/sync/download', async (req, res) => {
+  try {
+    const factory_id = req.query.factory_id;
+    if (!factory_id) return res.status(400).json({ ok: false, error: 'factory_id required' });
+
+    // In future: Extract latest Master data updates logic goes here
+    console.log(`[SYNC DOWNLOAD] Factory ${factory_id} requested master updates`);
+
+    res.json({ ok: true, data: { masters: [], orders: [] }, message: 'Up to date' });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 app.use('/api', (req, res) => {
   console.log('404 Not Found for API:', req.method, req.originalUrl);
   res.status(404).json({ ok: false, error: 'API route not found' });

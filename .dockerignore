@@ -7,3 +7,14 @@ logs
 coverage
 .vscode
 .idea
+*.zip
+*.tar
+*.gz
+*.tar.gz
+*.sql
+*.backup
+BACKUPS/
+uploads/
+temp/
+updates/
+docker-data/
